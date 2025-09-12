@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  database-schema-creator:
+    image: ghcr.io/colin-lacy/sveltos-nats-workflows/knapscen-create-database:latest
+    environment:
+      # MySQL Configuration
+      MYSQL_HOST: mysql.example.com
+      MYSQL_PORT: 3306
+      MYSQL_ROOT_USER: root
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      
+      # Database Configuration
+      SCHEMA_NAME: my_application_db
+      DB_USER: app_user
+      
+      # Kubernetes Configuration
+      K8S_NAMESPACE: default
+      SECRET_NAME: db-credentials
+      
+      # Kubernetes API Server (automatically set in cluster)
+      # KUBERNETES_SERVICE_HOST: kubernetes.default.svc.cluster.local
+      # KUBERNETES_SERVICE_PORT: 443
+    
+    # Mount service account token and CA cert (when running in Kubernetes)
+    # volumes:
+    #   - /var/run/secrets/kubernetes.io/serviceaccount:/var/run/secrets/kubernetes.io/serviceaccount:ro
+    
+    restart: "no"
+
+# Example of running alongside MySQL for testing
+# Uncomment below if you want to test with a local MySQL instance
+#
+# networks:
+#   default:
+#     name: database-network
+#
+# services:
+#   mysql:
+#     image: mysql:8.0
+#     environment:
+#       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#       MYSQL_DATABASE: test_db
+#     ports:
+#       - "3306:3306"
+#     volumes:
+#       - mysql_data:/var/lib/mysql
+#
+# volumes:
+#   mysql_data:

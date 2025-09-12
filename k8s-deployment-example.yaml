@@ -1,0 +1,74 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: database-schema-creator
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: secret-manager
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: database-schema-creator-binding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: database-schema-creator
+  namespace: default
+roleRef:
+  kind: Role
+  name: secret-manager
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-database-schema
+  namespace: default
+spec:
+  template:
+    spec:
+      serviceAccountName: database-schema-creator
+      containers:
+      - name: schema-creator
+        image: ghcr.io/colin-lacy/sveltos-nats-workflows/knapscen-create-database:latest
+        env:
+        - name: MYSQL_HOST
+          value: "mysql.example.com"
+        - name: MYSQL_ROOT_USER
+          value: "root"
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-root-credentials
+              key: password
+        - name: SCHEMA_NAME
+          value: "my_application_db"
+        - name: DB_USER
+          value: "app_user"
+        - name: K8S_NAMESPACE
+          value: "default"
+        - name: SECRET_NAME
+          value: "db-credentials"
+        - name: MYSQL_PORT
+          value: "3306"
+      restartPolicy: OnFailure
+---
+# Example: MySQL root credentials secret (create this separately)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-root-credentials
+  namespace: default
+type: Opaque
+data:
+  password: <base64-encoded-mysql-root-password>
