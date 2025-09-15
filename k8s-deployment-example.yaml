@@ -40,35 +40,29 @@ spec:
       serviceAccountName: database-schema-creator
       containers:
       - name: schema-creator
-        image: ghcr.io/colin-lacy/sveltos-nats-workflows/knapscen-create-database:latest
+        image: ghcr.io/colinjlacy/knapscen-create-database:latest
         env:
         - name: MYSQL_HOST
-          value: "mysql.example.com"
+          value: "my-test-cluster.default.svc.cluster.local"
         - name: MYSQL_ROOT_USER
-          value: "root"
+          valueFrom:
+            secretKeyRef:
+              name: my-test-cluster-privsecrets
+              key: clusterAdminUsername
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: mysql-root-credentials
-              key: password
+              name: my-test-cluster-privsecrets
+              key: clusterAdminPassword
         - name: SCHEMA_NAME
-          value: "my_application_db"
+          value: "bassline_boogie"
         - name: DB_USER
-          value: "app_user"
+          value: "bassline_boogie_user"
         - name: K8S_NAMESPACE
           value: "default"
         - name: SECRET_NAME
-          value: "db-credentials"
+          value: "bassline_boogie_credentials"
         - name: MYSQL_PORT
           value: "3306"
       restartPolicy: OnFailure
----
-# Example: MySQL root credentials secret (create this separately)
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mysql-root-credentials
-  namespace: default
-type: Opaque
-data:
-  password: <base64-encoded-mysql-root-password>
+
